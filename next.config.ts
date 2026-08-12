@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   images: {
     // Allows next/image to optimize photos uploaded to Supabase Storage.
     // Replace with your project's actual storage hostname, or narrow the

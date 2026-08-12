@@ -20,12 +20,14 @@ export type ListingCardData = {
     current_high_bid: number | null;
     reserve_price: number | null;
     reserve_met: boolean;
+    status: string;
   } | null;
 };
 
 export function ListingCard({ listing }: { listing: ListingCardData }) {
   const auction = listing.auction;
   const photo = listing.photos[0];
+  const isLive = auction?.status === "live";
 
   const urgencyLevel = auction ? getUrgencyLevel(auction.end_time) : "ended";
   const urgencyBarClass = {
@@ -77,15 +79,19 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
         </CardContent>
         <CardFooter className="flex items-center justify-between pb-4">
           <div>
-            <div className="text-xs text-muted-foreground">Current bid</div>
+            <div className="text-xs text-muted-foreground">
+              {isLive ? "Current bid" : "Final bid"}
+            </div>
             <div className="font-semibold">
               {formatCurrency(auction?.current_high_bid)}
             </div>
           </div>
           {auction && (
             <div className="text-right">
-              <div className="text-xs text-muted-foreground">Ends in</div>
-              <Countdown endTime={auction.end_time} />
+              <div className="text-xs text-muted-foreground">
+                {isLive ? "Ends in" : "Ended"}
+              </div>
+              {isLive && <Countdown endTime={auction.end_time} />}
             </div>
           )}
         </CardFooter>

@@ -1,38 +1,37 @@
 import { createClient } from "@/lib/supabase/server";
 import { ListingCard, type ListingCardData } from "@/components/listing-card";
 import { Hero } from "@/components/hero";
-import { FilterBar } from "@/components/filter-bar";
 import { buildListingsQuery } from "@/lib/listings";
 
-export default async function HomePage({
+export default async function FeaturedAuctionsPage({
   searchParams,
-}: PageProps<"/">) {
+}: PageProps<"/featured">) {
   const { q } = await searchParams;
   const supabase = await createClient();
 
   const { data: listings, error } = await buildListingsQuery(supabase, {
     view: "live",
+    featuredOnly: true,
     q: typeof q === "string" ? q : undefined,
   });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <Hero />
-      <FilterBar />
+      <h2 className="mt-6 text-xl font-bold tracking-tight">
+        Featured Auctions
+      </h2>
 
       {error && (
         <p className="mt-8 text-sm text-destructive">
-          Couldn&apos;t load listings: {error.message}. Have you set your
-          Supabase env vars and run the migration yet? See README.md.
+          Couldn&apos;t load listings: {error.message}.
         </p>
       )}
 
       {!error && (!listings || listings.length === 0) && (
-        <div className="mt-16 rounded-lg border border-dashed p-12 text-center">
+        <div className="mt-8 rounded-lg border border-dashed p-12 text-center">
           <p className="text-sm text-muted-foreground">
-            {q
-              ? `No live auctions match "${q}".`
-              : "No live auctions right now. Once you've run the migration and approved a listing, it will show up here."}
+            No featured auctions right now.
           </p>
         </div>
       )}
