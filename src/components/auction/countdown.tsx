@@ -32,7 +32,12 @@ export function Countdown({ endTime }: { endTime: string }) {
   const isEnded = remainingMs <= 0;
 
   return (
+    // suppressHydrationWarning: this is a live clock — the server-rendered
+    // second and the client's first tick are expected to differ by ~1s.
+    // React's own guidance for exactly this case: silence the warning
+    // rather than restructure the render to avoid it.
     <span
+      suppressHydrationWarning
       className={cn(
         "font-medium tabular-nums",
         isEnded && "text-muted-foreground",
