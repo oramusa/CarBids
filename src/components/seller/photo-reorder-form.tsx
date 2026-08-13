@@ -60,6 +60,12 @@ export function PhotoReorderForm({
   }
 
   async function addPhotos(files: FileList) {
+    // Snapshot into a plain array synchronously, before any await — `files`
+    // is a *live* FileList tied to the <input>, and the caller resets
+    // input.value right after invoking this, which would otherwise empty
+    // this same list out from under us once we actually get around to
+    // reading it.
+    const fileArray = Array.from(files);
     setUploading(true);
     setError(null);
     try {
@@ -74,7 +80,7 @@ export function PhotoReorderForm({
       }
 
       const uploadedUrls: string[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of fileArray) {
         const path = buildPhotoPath(user.id, file.name);
         const { error: uploadError } = await supabase.storage
           .from("listing-photos")
