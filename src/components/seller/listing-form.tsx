@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { X, GripVertical } from "lucide-react";
+import { X, GripVertical, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -455,7 +455,9 @@ export function ListingForm(props: ListingFormProps) {
         {photos.length > 0 && (
           <>
             <p className="text-xs text-muted-foreground">
-              Drag to reorder — the first photo is used as the cover image.
+              Drag to reorder, or hover a photo and click the star to make it
+              the cover — used on listings, search results, and the vehicle
+              details page.
             </p>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {photos.map((photo, index) => (
@@ -487,10 +489,27 @@ export function ListingForm(props: ListingFormProps) {
                     sizes="120px"
                     unoptimized={photo.url.startsWith("blob:")}
                   />
-                  {index === 0 && (
+                  {index === 0 ? (
                     <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
                       Cover
                     </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPhotos((prev) => {
+                          const next = [...prev];
+                          const [moved] = next.splice(index, 1);
+                          next.unshift(moved);
+                          return next;
+                        })
+                      }
+                      aria-label="Set as cover photo"
+                      title="Set as cover photo"
+                      className="absolute left-1 top-1 rounded-full bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-primary group-hover:opacity-100"
+                    >
+                      <Star className="size-3.5" />
+                    </button>
                   )}
                   <div className="absolute right-1 top-1 rounded bg-background/80 p-0.5 text-muted-foreground">
                     <GripVertical className="size-3.5" />

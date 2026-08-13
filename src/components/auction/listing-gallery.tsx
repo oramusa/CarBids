@@ -20,10 +20,20 @@ export function ListingGallery({
         {photos.length > 0 ? (
           <div
             className="flex h-full transition-transform duration-300 ease-out"
-            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+            style={{
+              width: `${photos.length * 100}%`,
+              // translateX's percentage is relative to this track's own
+              // width (N slides wide), not one slide — dividing by N
+              // converts "move activeIndex slides" into the right %.
+              transform: `translateX(-${(activeIndex / photos.length) * 100}%)`,
+            }}
           >
             {photos.map((photo, index) => (
-              <div key={photo} className="relative h-full w-full shrink-0">
+              <div
+                key={photo}
+                className="relative h-full shrink-0"
+                style={{ width: `${100 / photos.length}%` }}
+              >
                 <Image
                   src={photo}
                   alt={alt}
