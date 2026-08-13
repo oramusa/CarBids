@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { relistListing } from "@/app/sell/dashboard/actions";
 
 type DashboardListing = {
   id: string;
@@ -231,6 +232,14 @@ export default async function SellerDashboardPage(
                   <Link href={`/sell/${listing.id}/edit`}>Edit</Link>
                 </Button>
               )}
+              {auction &&
+                ["ended", "no_sale"].includes(auction.status) && (
+                  <form action={relistListing.bind(null, listing.id)}>
+                    <Button variant="outline" size="sm" type="submit">
+                      Relist
+                    </Button>
+                  </form>
+                )}
             </li>
           );
         })}
