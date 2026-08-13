@@ -45,9 +45,12 @@ export async function Nav() {
         <div className="flex items-center gap-4">
           {session ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium">
+              <Link
+                href="/sell/dashboard"
+                className="text-sm font-medium hover:underline"
+              >
                 {session.profile?.username ?? session.user.email}
-              </span>
+              </Link>
               <form action={signOut}>
                 <Button variant="outline" size="sm" type="submit">
                   Sign out
