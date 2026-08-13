@@ -31,18 +31,34 @@ export async function approveListing(listingId: string, formData: FormData) {
   const startTime = new Date();
   const endTime = new Date(startTime.getTime() + durationDays * 24 * 60 * 60 * 1000);
 
-  await supabase
-    .from("listings")
-    .update({ status: "live", rejection_reason: null })
-    .eq("id", listingId);
-
-  await supabase.from("auctions").insert({
+  // Create the auction first — only flip the listing to "live" once it
+  // actually has one, so a failed insert can't leave a listing marked live
+  // with nothing backing it (which would just silently vanish from every
+  // listings query, since those all inner-join on auctions).
+  const { error: auctionError } = await supabase.from("auctions").insert({
     listing_id: listingId,
     start_time: startTime.toISOString(),
     end_time: endTime.toISOString(),
     reserve_price: reservePrice,
     status: "live",
   });
+
+  if (auctionError) {
+    redirect(
+      `/admin/${listingId}/approve?error=${encodeURIComponent(auctionError.message)}`
+    );
+  }
+
+  const { error: listingError } = await supabase
+    .from("listings")
+    .update({ status: "live", rejection_reason: null })
+    .eq("id", listingId);
+
+  if (listingError) {
+    redirect(
+      `/admin/${listingId}/approve?error=${encodeURIComponent(listingError.message)}`
+    );
+  }
 
   revalidatePath("/admin");
   redirect("/admin");

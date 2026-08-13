@@ -17,6 +17,7 @@ export default async function ApproveListingPage(
   props: PageProps<"/admin/[id]/approve">
 ) {
   const { id } = await props.params;
+  const { error } = await props.searchParams;
   const session = await getCurrentUser();
   if (!session?.profile?.is_admin) redirect("/");
 
@@ -42,6 +43,13 @@ export default async function ApproveListingPage(
               : `This listing is no longer pending review (status: ${listing.status}).`}
           </CardDescription>
         </CardHeader>
+        {typeof error === "string" && error && (
+          <CardContent className="pt-0">
+            <p className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+              Approval failed: {error}
+            </p>
+          </CardContent>
+        )}
         {listing.status === "pending_review" && (
           <CardContent>
             <form action={approveListing.bind(null, listing.id)} className="flex flex-col gap-4">
