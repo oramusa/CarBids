@@ -455,9 +455,9 @@ export function ListingForm(props: ListingFormProps) {
         {photos.length > 0 && (
           <>
             <p className="text-xs text-muted-foreground">
-              Drag to reorder, or hover a photo and click the star to make it
-              the cover — used on listings, search results, and the vehicle
-              details page.
+              Drag to reorder, or hover a photo and click the star to swap it
+              into the cover position — used on listings, search results, and
+              the vehicle details page.
             </p>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {photos.map((photo, index) => (
@@ -499,8 +499,7 @@ export function ListingForm(props: ListingFormProps) {
                       onClick={() =>
                         setPhotos((prev) => {
                           const next = [...prev];
-                          const [moved] = next.splice(index, 1);
-                          next.unshift(moved);
+                          [next[0], next[index]] = [next[index], next[0]];
                           return next;
                         })
                       }
