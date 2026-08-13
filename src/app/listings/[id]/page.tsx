@@ -11,6 +11,7 @@ import { ListingCard, type ListingCardData } from "@/components/listing-card";
 import { MarketEstimate } from "@/components/market-estimate";
 import { VehicleHistory } from "@/components/vehicle-history";
 import { getRecalls } from "@/lib/nhtsa-recalls";
+import { getBuyerPremium } from "@/lib/format";
 
 export default async function ListingPage(props: PageProps<"/listings/[id]">) {
   const { id } = await props.params;
@@ -114,10 +115,14 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
     .map((row) => {
       const a = Array.isArray(row.auction) ? row.auction[0] : row.auction;
       if (a?.current_high_bid == null) return null;
+      const bid = a.current_high_bid;
       return {
         model: row.model,
         year: row.year,
-        price: a.current_high_bid,
+        // Total the buyer actually paid, not just the winning bid — this
+        // is what makes it a true "estimated auction value" comparison
+        // rather than an apples-to-oranges bid-only number.
+        price: bid + getBuyerPremium(bid),
         endTime: a.end_time,
       };
     })
@@ -210,7 +215,12 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
             <MarketEstimate
               low={marketEstimate.low}
               high={marketEstimate.high}
-              currentBid={auction.current_high_bid}
+              currentTotalCost={
+                auction.current_high_bid != null
+                  ? auction.current_high_bid +
+                    getBuyerPremium(auction.current_high_bid)
+                  : null
+              }
               sampleSize={comps.length}
               comps={compSales}
               make={listing.make}

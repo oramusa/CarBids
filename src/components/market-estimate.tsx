@@ -5,32 +5,32 @@ type Comp = { model: string; year: number; price: number; endTime: string };
 export function MarketEstimate({
   low,
   high,
-  currentBid,
+  currentTotalCost,
   sampleSize,
   comps,
   make,
 }: {
   low: number;
   high: number;
-  currentBid: number | null;
+  currentTotalCost: number | null;
   sampleSize: number;
   comps: Comp[];
   make: string;
 }) {
   let verdict: string | null = null;
-  if (currentBid != null) {
-    if (currentBid < low) verdict = "Below market";
-    else if (currentBid > high) verdict = "Above market";
+  if (currentTotalCost != null) {
+    if (currentTotalCost < low) verdict = "Below market";
+    else if (currentTotalCost > high) verdict = "Above market";
     else verdict = "At market";
   }
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="text-xs text-muted-foreground">
-        Estimated market value{" "}
+        Estimated auction value{" "}
         <span className="italic">
-          (based on {sampleSize} past sale{sampleSize === 1 ? "" : "s"} on
-          Car Bids)
+          (based on {sampleSize} past sale{sampleSize === 1 ? "" : "s"} on Car
+          Bids, including buyer&apos;s premium)
         </span>
       </div>
       <div className="mt-1 text-lg font-semibold">
@@ -39,7 +39,7 @@ export function MarketEstimate({
       {verdict && (
         <div className="mt-2 flex items-center justify-between text-sm">
           <span className="text-muted-foreground">
-            Current bid: {formatCurrency(currentBid)}
+            Current total cost: {formatCurrency(currentTotalCost)}
           </span>
           <span
             className={
@@ -56,7 +56,8 @@ export function MarketEstimate({
       {comps.length > 0 && (
         <div className="mt-3 border-t border-border pt-3">
           <div className="text-xs text-muted-foreground">
-            Comparable {make} sales on Car Bids
+            Comparable {make} sales on Car Bids{" "}
+            <span className="italic">(total paid, incl. premium)</span>
           </div>
           <ul className="mt-1.5 flex flex-col gap-1">
             {comps.slice(0, 5).map((comp, i) => (
