@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { Star } from "lucide-react";
+import { Star, X } from "lucide-react";
 import { reorderListingPhotos } from "@/app/sell/[id]/photos/actions";
 
 export function PhotoReorderForm({
@@ -48,6 +48,12 @@ export function PhotoReorderForm({
     save(next);
   }
 
+  function removePhoto(index: number) {
+    const next = photos.filter((_, i) => i !== index);
+    setPhotos(next);
+    save(next);
+  }
+
   if (photos.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -59,8 +65,9 @@ export function PhotoReorderForm({
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-muted-foreground">
-        Drag to reorder, or hover a photo and click the star to swap it into
-        the cover position. Changes save automatically.
+        Drag to reorder, hover a photo and click the star to swap it into
+        the cover position, or click the × to remove it. Changes save
+        automatically.
       </p>
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {photos.map((photo, index) => (
@@ -97,6 +104,15 @@ export function PhotoReorderForm({
                 <Star className="size-3.5" />
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => removePhoto(index)}
+              aria-label="Remove photo"
+              title="Remove photo"
+              className="absolute bottom-1 right-1 rounded-full bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+            >
+              <X className="size-3.5" />
+            </button>
           </div>
         ))}
       </div>
