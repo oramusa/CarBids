@@ -13,20 +13,27 @@ export function ListingGallery({
   alt: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const activePhoto = photos[activeIndex];
 
   return (
     <div className="flex flex-col gap-2">
       <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
-        {activePhoto ? (
-          <Image
-            key={activePhoto}
-            src={activePhoto}
-            alt={alt}
-            fill
-            className="object-cover"
-            priority
-          />
+        {photos.length > 0 ? (
+          <div
+            className="flex h-full transition-transform duration-300 ease-out"
+            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+          >
+            {photos.map((photo, index) => (
+              <div key={photo} className="relative h-full w-full shrink-0">
+                <Image
+                  src={photo}
+                  alt={alt}
+                  fill
+                  className="object-cover"
+                  priority={index === 0}
+                />
+              </div>
+            ))}
+          </div>
         ) : (
           <CarIllustration className="h-full w-full" />
         )}
