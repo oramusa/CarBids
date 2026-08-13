@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { relistListing, submitDraftForReview } from "@/app/sell/dashboard/actions";
+import { SellerReputation } from "@/components/seller-reputation";
 
 type DashboardListing = {
   id: string;
@@ -66,14 +67,23 @@ export default async function SellerDashboardPage(
   if (!session) redirect("/login");
 
   const supabase = await createClient();
-  const { data: listings, error } = await supabase
-    .from("listings")
-    .select(
-      `id, make, model, year, status, rejection_reason, created_at,
-       auction:auctions (id, end_time, current_high_bid, status)`
-    )
-    .eq("seller_id", session.user.id)
-    .order("created_at", { ascending: false });
+  const [{ data: listings, error }, { data: ownReviews }] = await Promise.all([
+    supabase
+      .from("listings")
+      .select(
+        `id, make, model, year, status, rejection_reason, created_at,
+         auction:auctions (id, end_time, current_high_bid, status)`
+      )
+      .eq("seller_id", session.user.id)
+      .order("created_at", { ascending: false }),
+    supabase.from("reviews").select("rating").eq("seller_id", session.user.id),
+  ]);
+
+  const reviewCount = ownReviews?.length ?? 0;
+  const averageRating =
+    reviewCount > 0
+      ? ownReviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+      : null;
 
   const grouped: Record<TabKey, DashboardListing[]> = {
     drafts: [],
@@ -139,9 +149,15 @@ export default async function SellerDashboardPage(
               </span>
             )}
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Manage the cars you&apos;ve listed for auction.
-          </p>
+          <div className="mt-1 flex items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              Manage the cars you&apos;ve listed for auction.
+            </p>
+            <SellerReputation
+              averageRating={averageRating}
+              reviewCount={reviewCount}
+            />
+          </div>
         </div>
         <Button asChild size="sm">
           <Link href="/sell">List another car</Link>

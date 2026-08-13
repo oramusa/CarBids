@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/supabase/get-user";
 import { BidPanel } from "@/components/auction/bid-panel";
 import { CommentsSection } from "@/components/auction/comments-section";
 import { ListingGallery } from "@/components/auction/listing-gallery";
+import { SellerReputation } from "@/components/seller-reputation";
+import { ReviewForm } from "@/components/auction/review-form";
 
 export default async function ListingPage(props: PageProps<"/listings/[id]">) {
   const { id } = await props.params;
@@ -25,18 +27,37 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
     ? listing.auction[0]
     : listing.auction;
 
-  const [{ data: bids }, { data: comments }] = await Promise.all([
-    supabase
-      .from("bids")
-      .select("id, amount, bidder_id, created_at, bidder:profiles(username)")
-      .eq("auction_id", auction.id)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("comments")
-      .select("id, body, created_at, user_id, author:profiles(username)")
-      .eq("listing_id", id)
-      .order("created_at", { ascending: true }),
-  ]);
+  const [{ data: bids }, { data: comments }, { data: sellerReviews }, { data: ownReview }] =
+    await Promise.all([
+      supabase
+        .from("bids")
+        .select("id, amount, bidder_id, created_at, bidder:profiles(username)")
+        .eq("auction_id", auction.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("comments")
+        .select("id, body, created_at, user_id, author:profiles(username)")
+        .eq("listing_id", id)
+        .order("created_at", { ascending: true }),
+      supabase.from("reviews").select("rating").eq("seller_id", listing.seller_id),
+      session
+        ? supabase
+            .from("reviews")
+            .select("id")
+            .eq("auction_id", auction.id)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
+
+  const reviewCount = sellerReviews?.length ?? 0;
+  const averageRating =
+    reviewCount > 0
+      ? sellerReviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount
+      : null;
+
+  const isAuctionOver = ["ended", "sold"].includes(auction.status);
+  const isWinner = session?.user.id === auction.current_high_bidder_id;
+  const canReview = isAuctionOver && isWinner && !ownReview;
 
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 lg:grid-cols-2">
@@ -53,10 +74,24 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
             {listing.mileage.toLocaleString()} miles · Listed by{" "}
             {listing.seller?.username ?? "seller"}
           </p>
+          <div className="mt-1">
+            <SellerReputation
+              averageRating={averageRating}
+              reviewCount={reviewCount}
+            />
+          </div>
         </div>
         <p className="whitespace-pre-line text-sm leading-relaxed">
           {listing.description}
         </p>
+
+        {canReview && (
+          <ReviewForm
+            listingId={id}
+            auctionId={auction.id}
+            sellerId={listing.seller_id}
+          />
+        )}
 
         <CommentsSection
           listingId={id}
