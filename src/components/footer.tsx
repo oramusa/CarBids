@@ -181,6 +181,11 @@ export async function Footer() {
                     Community
                   </Link>
                 </li>
+                <li>
+                  <Link href="/events" className="hover:text-foreground">
+                    Events
+                  </Link>
+                </li>
               </ul>
             </div>
 
