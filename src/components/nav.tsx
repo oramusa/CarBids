@@ -1,14 +1,26 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Search, Bell } from "lucide-react";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { signOut } from "@/app/auth/actions";
 import { Button } from "@/components/ui/button";
 import { AuctionsNavDropdown } from "@/components/auctions-nav-dropdown";
+import { createClient } from "@/lib/supabase/server";
 
 const INERT_LINKS = ["Community", "Events", "About Us", "Leaderboard"];
 
 export async function Nav() {
   const session = await getCurrentUser();
+
+  let unreadCount = 0;
+  if (session) {
+    const supabase = await createClient();
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", session.user.id)
+      .is("read_at", null);
+    unreadCount = count ?? 0;
+  }
 
   return (
     <header className="border-b border-border">
@@ -45,6 +57,18 @@ export async function Nav() {
         <div className="flex items-center gap-4">
           {session ? (
             <div className="flex items-center gap-3">
+              <Link
+                href="/notifications"
+                className="relative text-muted-foreground hover:text-foreground"
+                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+              >
+                <Bell className="size-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </Link>
               <Link
                 href="/sell/dashboard"
                 className="text-sm font-medium hover:underline"
