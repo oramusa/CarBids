@@ -38,13 +38,21 @@ type ListingFormProps =
       listingId: string;
       defaultValues: FormInput;
       existingPhotos: string[];
+      currentStatus: "draft" | "pending_review";
     };
+
+/** Both create and edit-while-draft offer these two save targets. */
+const canChooseDraft = (props: ListingFormProps) =>
+  props.mode === "create" || props.currentStatus === "draft";
 
 export function ListingForm(props: ListingFormProps) {
   const router = useRouter();
   const [photoFiles, setPhotoFiles] = useState<FileList | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<
+    "draft" | "pending_review"
+  >("pending_review");
 
   const {
     register,
@@ -91,10 +99,17 @@ export function ListingForm(props: ListingFormProps) {
       }
     }
 
+    const status = canChooseDraft(props) ? targetStatus : "pending_review";
+
     if (props.mode === "create") {
       const { data: listing, error } = await supabase
         .from("listings")
-        .insert({ ...values, seller_id: user.id, photos: newPhotoUrls })
+        .insert({
+          ...values,
+          seller_id: user.id,
+          photos: newPhotoUrls,
+          status,
+        })
         .select()
         .single();
 
@@ -104,17 +119,23 @@ export function ListingForm(props: ListingFormProps) {
         return;
       }
 
-      router.push(`/sell/submitted?listing=${listing.id}`);
+      router.push(
+        status === "draft"
+          ? "/sell/dashboard?tab=drafts"
+          : `/sell/submitted?listing=${listing.id}`
+      );
       return;
     }
 
-    // Edit mode — RLS only allows this while the listing is still
-    // pending_review (see "sellers can update their own pending listings").
+    // Edit mode — RLS only allows this while the listing is still draft or
+    // pending_review (see the "sellers can update their own draft or
+    // pending listings" policy).
     const { error } = await supabase
       .from("listings")
       .update({
         ...values,
         photos: [...props.existingPhotos, ...newPhotoUrls],
+        status,
       })
       .eq("id", props.listingId);
 
@@ -124,7 +145,9 @@ export function ListingForm(props: ListingFormProps) {
       return;
     }
 
-    router.push("/sell/dashboard");
+    router.push(
+      status === "draft" ? "/sell/dashboard?tab=drafts" : "/sell/dashboard"
+    );
   }
 
   return (
@@ -210,13 +233,31 @@ export function ListingForm(props: ListingFormProps) {
         <p className="text-sm text-destructive">{submitError}</p>
       )}
 
-      <Button type="submit" disabled={submitting}>
-        {submitting
-          ? "Saving…"
-          : props.mode === "edit"
-            ? "Save changes"
-            : "Submit for review"}
-      </Button>
+      <div className="flex gap-2">
+        {canChooseDraft(props) && (
+          <Button
+            type="submit"
+            variant="outline"
+            disabled={submitting}
+            onClick={() => setTargetStatus("draft")}
+          >
+            {submitting && targetStatus === "draft"
+              ? "Saving…"
+              : "Save as draft"}
+          </Button>
+        )}
+        <Button
+          type="submit"
+          disabled={submitting}
+          onClick={() => setTargetStatus("pending_review")}
+        >
+          {submitting && targetStatus === "pending_review"
+            ? "Saving…"
+            : props.mode === "edit" && !canChooseDraft(props)
+              ? "Save changes"
+              : "Submit for review"}
+        </Button>
+      </div>
     </form>
   );
 }

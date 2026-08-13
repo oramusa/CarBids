@@ -27,22 +27,28 @@ export default async function EditListingPage(
 
   if (!listing) notFound();
 
+  const isEditable = listing.status === "draft" || listing.status === "pending_review";
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
       <Card>
         <CardHeader>
           <CardTitle>Edit listing</CardTitle>
           <CardDescription>
-            {listing.status === "pending_review"
-              ? "You can edit this listing until it's approved and scheduled for auction."
-              : "This listing can no longer be edited — it's past the pending review stage."}
+            {listing.status === "draft" &&
+              "This is a draft — save it as a draft again or submit it for review whenever you're ready."}
+            {listing.status === "pending_review" &&
+              "You can edit this listing until it's approved and scheduled for auction."}
+            {!isEditable &&
+              "This listing can no longer be edited — it's past the pending review stage."}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {listing.status === "pending_review" ? (
+          {isEditable ? (
             <ListingForm
               mode="edit"
               listingId={listing.id}
+              currentStatus={listing.status as "draft" | "pending_review"}
               existingPhotos={listing.photos ?? []}
               defaultValues={{
                 make: listing.make,

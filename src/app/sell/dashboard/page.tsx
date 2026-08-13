@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BadgeCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { relistListing } from "@/app/sell/dashboard/actions";
+import { relistListing, submitDraftForReview } from "@/app/sell/dashboard/actions";
 
 type DashboardListing = {
   id: string;
@@ -29,6 +29,7 @@ type DashboardListing = {
 };
 
 const TABS = [
+  { key: "drafts", label: "Drafts" },
   { key: "active", label: "Active" },
   { key: "upcoming", label: "Upcoming" },
   { key: "completed", label: "Completed" },
@@ -43,6 +44,7 @@ function normalizeAuction(listing: DashboardListing) {
 
 function categorize(listing: DashboardListing): TabKey | null {
   const auction = normalizeAuction(listing);
+  if (listing.status === "draft") return "drafts";
   if (listing.status === "rejected") return "rejected";
   if (auction?.status === "live") return "active";
   if (auction && ["ended", "sold", "no_sale"].includes(auction.status)) {
@@ -74,6 +76,7 @@ export default async function SellerDashboardPage(
     .order("created_at", { ascending: false });
 
   const grouped: Record<TabKey, DashboardListing[]> = {
+    drafts: [],
     active: [],
     upcoming: [],
     completed: [],
@@ -227,10 +230,20 @@ export default async function SellerDashboardPage(
                   </p>
                 )}
               </div>
-              {listing.status === "pending_review" && (
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`/sell/${listing.id}/edit`}>Edit</Link>
-                </Button>
+              {(listing.status === "pending_review" ||
+                listing.status === "draft") && (
+                <div className="flex gap-2">
+                  <Button asChild variant="outline" size="sm">
+                    <Link href={`/sell/${listing.id}/edit`}>Edit</Link>
+                  </Button>
+                  {listing.status === "draft" && (
+                    <form action={submitDraftForReview.bind(null, listing.id)}>
+                      <Button size="sm" type="submit">
+                        Submit for review
+                      </Button>
+                    </form>
+                  )}
+                </div>
               )}
               {auction &&
                 ["ended", "no_sale"].includes(auction.status) && (

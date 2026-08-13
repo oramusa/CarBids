@@ -47,3 +47,19 @@ export async function relistListing(listingId: string) {
 
   redirect(`/sell/${relisted.id}/edit`);
 }
+
+/** Moves a draft straight into the review queue without re-opening the form. */
+export async function submitDraftForReview(listingId: string) {
+  const session = await getCurrentUser();
+  if (!session) redirect("/login");
+
+  const supabase = await createClient();
+  await supabase
+    .from("listings")
+    .update({ status: "pending_review" })
+    .eq("id", listingId)
+    .eq("seller_id", session.user.id)
+    .eq("status", "draft");
+
+  redirect("/sell/dashboard?tab=upcoming");
+}
