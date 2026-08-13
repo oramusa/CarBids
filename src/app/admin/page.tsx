@@ -22,9 +22,14 @@ export default async function AdminQueuePage() {
     <div className="mx-auto max-w-3xl px-4 py-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Listing approval queue</h1>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/admin/users">Users</Link>
-        </Button>
+        <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/auctions">Auctions</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/users">Users</Link>
+          </Button>
+        </div>
       </div>
       <p className="mt-1 text-sm text-muted-foreground">
         {pending?.length ?? 0} listing{pending?.length === 1 ? "" : "s"} waiting for review.
