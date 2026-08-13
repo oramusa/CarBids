@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { decodeVin } from "@/app/sell/vin-actions";
+import { buildPhotoPath } from "@/lib/photo-upload";
 
 const schema = z.object({
   make: z.string().min(1, "Required"),
@@ -46,13 +47,6 @@ const schema = z.object({
 
 type FormInput = z.input<typeof schema>;
 type FormValues = z.output<typeof schema>;
-
-// Kept outside the component so the lint rule that flags impure calls
-// (Date.now, used here only to make the storage path unique) during render
-// doesn't apply — this only ever runs from the submit handler.
-function buildPhotoPath(userId: string, fileName: string) {
-  return `${userId}/${Date.now()}-${fileName}`;
-}
 
 /** One photo in the seller's chosen order — either an already-uploaded
  * photo (edit mode) or a newly-picked file waiting to upload on submit. */

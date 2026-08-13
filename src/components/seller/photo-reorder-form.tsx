@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import Image from "next/image";
 import { Star, X } from "lucide-react";
 import { reorderListingPhotos } from "@/app/sell/[id]/photos/actions";
+import { createClient } from "@/lib/supabase/client";
+import { buildPhotoPath } from "@/lib/photo-upload";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export function PhotoReorderForm({
   listingId,
@@ -16,6 +20,7 @@ export function PhotoReorderForm({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function save(next: string[]) {
@@ -54,12 +59,41 @@ export function PhotoReorderForm({
     save(next);
   }
 
-  if (photos.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        This listing has no photos to reorder.
-      </p>
-    );
+  async function addPhotos(files: FileList) {
+    setUploading(true);
+    setError(null);
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setError("You need to sign in to upload photos.");
+      setUploading(false);
+      return;
+    }
+
+    const uploadedUrls: string[] = [];
+    for (const file of Array.from(files)) {
+      const path = buildPhotoPath(user.id, file.name);
+      const { error: uploadError } = await supabase.storage
+        .from("listing-photos")
+        .upload(path, file);
+      if (uploadError) {
+        setError(`Photo upload failed: ${uploadError.message}`);
+        setUploading(false);
+        return;
+      }
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("listing-photos").getPublicUrl(path);
+      uploadedUrls.push(publicUrl);
+    }
+
+    setUploading(false);
+    const next = [...photos, ...uploadedUrls];
+    setPhotos(next);
+    save(next);
   }
 
   return (
@@ -69,6 +103,13 @@ export function PhotoReorderForm({
         the cover position, or click the × to remove it. Changes save
         automatically.
       </p>
+
+      {photos.length === 0 && (
+        <p className="text-sm text-muted-foreground">
+          This listing has no photos yet.
+        </p>
+      )}
+
       <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
         {photos.map((photo, index) => (
           <div
@@ -117,9 +158,28 @@ export function PhotoReorderForm({
         ))}
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="addPhotos">Add photos</Label>
+        <Input
+          id="addPhotos"
+          type="file"
+          accept="image/*"
+          multiple
+          disabled={uploading}
+          onChange={(e) => {
+            const files = e.target.files;
+            if (files && files.length > 0) addPhotos(files);
+            e.target.value = "";
+          }}
+        />
+      </div>
+
       <div className="flex items-center gap-3 text-xs">
-        {isPending && <span className="text-muted-foreground">Saving…</span>}
-        {!isPending && savedAt && (
+        {uploading && <span className="text-muted-foreground">Uploading…</span>}
+        {!uploading && isPending && (
+          <span className="text-muted-foreground">Saving…</span>
+        )}
+        {!uploading && !isPending && savedAt && (
           <span className="text-muted-foreground">Saved</span>
         )}
         {error && <span className="text-destructive">{error}</span>}
