@@ -63,6 +63,14 @@ export async function Nav() {
               >
                 My Bids
               </Link>
+              {session.profile?.is_admin && (
+                <Link
+                  href="/admin"
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 href="/notifications"
                 className="relative text-muted-foreground hover:text-foreground"
