@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { X, GripVertical } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,6 +54,12 @@ function buildPhotoPath(userId: string, fileName: string) {
   return `${userId}/${Date.now()}-${fileName}`;
 }
 
+/** One photo in the seller's chosen order — either an already-uploaded
+ * photo (edit mode) or a newly-picked file waiting to upload on submit. */
+type PhotoEntry = { id: string; url: string; file?: File };
+
+let nextPhotoId = 0;
+
 type ListingFormProps =
   | { mode: "create" }
   | {
@@ -68,7 +76,12 @@ const canChooseDraft = (props: ListingFormProps) =>
 
 export function ListingForm(props: ListingFormProps) {
   const router = useRouter();
-  const [photoFiles, setPhotoFiles] = useState<FileList | null>(null);
+  const [photos, setPhotos] = useState<PhotoEntry[]>(() =>
+    props.mode === "edit"
+      ? props.existingPhotos.map((url) => ({ id: String(nextPhotoId++), url }))
+      : []
+  );
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [targetStatus, setTargetStatus] = useState<
@@ -133,25 +146,27 @@ export function ListingForm(props: ListingFormProps) {
       return;
     }
 
-    // Upload any newly-selected photos; on edit these are appended to the
-    // listing's existing photos rather than replacing them.
-    const newPhotoUrls: string[] = [];
-    if (photoFiles) {
-      for (const file of Array.from(photoFiles)) {
-        const path = buildPhotoPath(user.id, file.name);
-        const { error: uploadError } = await supabase.storage
-          .from("listing-photos")
-          .upload(path, file);
-        if (uploadError) {
-          setSubmitError(`Photo upload failed: ${uploadError.message}`);
-          setSubmitting(false);
-          return;
-        }
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("listing-photos").getPublicUrl(path);
-        newPhotoUrls.push(publicUrl);
+    // Upload any newly-picked files and build the final photo list in the
+    // exact order the seller arranged them in (existing + new, interleaved).
+    const orderedPhotoUrls: string[] = [];
+    for (const photo of photos) {
+      if (!photo.file) {
+        orderedPhotoUrls.push(photo.url);
+        continue;
       }
+      const path = buildPhotoPath(user.id, photo.file.name);
+      const { error: uploadError } = await supabase.storage
+        .from("listing-photos")
+        .upload(path, photo.file);
+      if (uploadError) {
+        setSubmitError(`Photo upload failed: ${uploadError.message}`);
+        setSubmitting(false);
+        return;
+      }
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("listing-photos").getPublicUrl(path);
+      orderedPhotoUrls.push(publicUrl);
     }
 
     const status = canChooseDraft(props) ? targetStatus : "pending_review";
@@ -182,7 +197,7 @@ export function ListingForm(props: ListingFormProps) {
           transmission: transmission || null,
           body_style: bodyStyle || null,
           seller_id: user.id,
-          photos: newPhotoUrls,
+          photos: orderedPhotoUrls,
           status,
         })
         .select()
@@ -217,7 +232,7 @@ export function ListingForm(props: ListingFormProps) {
         service_history: serviceHistory || null,
         transmission: transmission || null,
         body_style: bodyStyle || null,
-        photos: [...props.existingPhotos, ...newPhotoUrls],
+        photos: orderedPhotoUrls,
         status,
       })
       .eq("id", props.listingId);
@@ -422,8 +437,79 @@ export function ListingForm(props: ListingFormProps) {
           type="file"
           accept="image/*"
           multiple
-          onChange={(e) => setPhotoFiles(e.target.files)}
+          onChange={(e) => {
+            const files = e.target.files;
+            if (!files) return;
+            setPhotos((prev) => [
+              ...prev,
+              ...Array.from(files).map((file) => ({
+                id: String(nextPhotoId++),
+                url: URL.createObjectURL(file),
+                file,
+              })),
+            ]);
+            e.target.value = "";
+          }}
         />
+
+        {photos.length > 0 && (
+          <>
+            <p className="text-xs text-muted-foreground">
+              Drag to reorder — the first photo is used as the cover image.
+            </p>
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {photos.map((photo, index) => (
+                <div
+                  key={photo.id}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragIndex === null || dragIndex === index) return;
+                    setPhotos((prev) => {
+                      const next = [...prev];
+                      const [moved] = next.splice(dragIndex, 1);
+                      next.splice(index, 0, moved);
+                      return next;
+                    });
+                    setDragIndex(null);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                  className={`group relative aspect-square cursor-grab overflow-hidden rounded-md border border-border bg-muted active:cursor-grabbing ${
+                    dragIndex === index ? "opacity-40" : ""
+                  }`}
+                >
+                  <Image
+                    src={photo.url}
+                    alt={`Photo ${index + 1}`}
+                    fill
+                    className="pointer-events-none object-cover"
+                    sizes="120px"
+                    unoptimized={photo.url.startsWith("blob:")}
+                  />
+                  {index === 0 && (
+                    <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-medium text-primary-foreground">
+                      Cover
+                    </span>
+                  )}
+                  <div className="absolute right-1 top-1 rounded bg-background/80 p-0.5 text-muted-foreground">
+                    <GripVertical className="size-3.5" />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPhotos((prev) => prev.filter((p) => p.id !== photo.id))
+                    }
+                    aria-label="Remove photo"
+                    className="absolute bottom-1 right-1 rounded-full bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {submitError && (
