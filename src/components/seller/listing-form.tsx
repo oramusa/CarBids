@@ -23,6 +23,9 @@ const schema = z.object({
   dealerOnly: z.boolean().optional(),
   accidentSeverity: z.enum(["none", "minor", "major"]).optional(),
   accidentDetails: z.string().optional(),
+  titleStatus: z.enum(["clean", "salvage", "rebuilt", "lemon", "other"]).optional(),
+  numberOfOwners: z.string().optional(),
+  serviceHistory: z.string().optional(),
 });
 
 type FormInput = z.input<typeof schema>;
@@ -138,7 +141,16 @@ export function ListingForm(props: ListingFormProps) {
     }
 
     const status = canChooseDraft(props) ? targetStatus : "pending_review";
-    const { dealerOnly, accidentSeverity, accidentDetails, ...rest } = values;
+    const {
+      dealerOnly,
+      accidentSeverity,
+      accidentDetails,
+      titleStatus,
+      numberOfOwners,
+      serviceHistory,
+      ...rest
+    } = values;
+    const parsedOwners = numberOfOwners ? Number(numberOfOwners) : null;
 
     if (props.mode === "create") {
       const { data: listing, error } = await supabase
@@ -148,6 +160,9 @@ export function ListingForm(props: ListingFormProps) {
           dealer_only: dealerOnly ?? false,
           accident_severity: accidentSeverity ?? "none",
           accident_details: accidentDetails || null,
+          title_status: titleStatus ?? "clean",
+          number_of_owners: parsedOwners,
+          service_history: serviceHistory || null,
           seller_id: user.id,
           photos: newPhotoUrls,
           status,
@@ -179,6 +194,9 @@ export function ListingForm(props: ListingFormProps) {
         dealer_only: dealerOnly ?? false,
         accident_severity: accidentSeverity ?? "none",
         accident_details: accidentDetails || null,
+        title_status: titleStatus ?? "clean",
+        number_of_owners: parsedOwners,
+        service_history: serviceHistory || null,
         photos: [...props.existingPhotos, ...newPhotoUrls],
         status,
       })
@@ -293,6 +311,43 @@ export function ListingForm(props: ListingFormProps) {
           {...register("accidentDetails")}
           rows={2}
           placeholder="Optional details (what happened, when, repairs made)"
+          className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="titleStatus">Title status</Label>
+          <select
+            id="titleStatus"
+            {...register("titleStatus")}
+            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <option value="clean">Clean</option>
+            <option value="salvage">Salvage</option>
+            <option value="rebuilt">Rebuilt</option>
+            <option value="lemon">Lemon</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="numberOfOwners">Number of owners (optional)</Label>
+          <Input
+            id="numberOfOwners"
+            type="number"
+            min="1"
+            {...register("numberOfOwners")}
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="serviceHistory">Service history (optional)</Label>
+        <textarea
+          id="serviceHistory"
+          {...register("serviceHistory")}
+          rows={3}
+          placeholder="Maintenance performed, when, by whom (self-reported)"
           className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         />
       </div>

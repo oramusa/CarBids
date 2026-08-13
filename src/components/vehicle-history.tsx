@@ -4,10 +4,16 @@ import type { Recall } from "@/lib/nhtsa-recalls";
 export function VehicleHistory({
   accidentSeverity,
   accidentDetails,
+  titleStatus,
+  numberOfOwners,
+  serviceHistory,
   recalls,
 }: {
   accidentSeverity: string;
   accidentDetails: string | null;
+  titleStatus: string;
+  numberOfOwners: number | null;
+  serviceHistory: string | null;
   recalls: Recall[];
 }) {
   const accidentLabel = {
@@ -16,23 +22,49 @@ export function VehicleHistory({
     major: "Major accident / frame damage reported",
   }[accidentSeverity] ?? "No accidents reported";
 
+  const titleLabel = {
+    clean: "Clean title",
+    salvage: "Salvage title",
+    rebuilt: "Rebuilt title",
+    lemon: "Lemon title",
+    other: "Other title status",
+  }[titleStatus] ?? "Clean title";
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="text-sm font-medium">Vehicle history</h3>
+      <p className="text-xs text-muted-foreground">
+        Accident history, title status, owners, and service history below
+        are seller-reported — not independently verified.
+      </p>
 
-      <div className="mt-3">
-        <div className="flex items-center gap-2">
-          <Badge variant={accidentSeverity === "none" ? "secondary" : "outline"}>
-            {accidentLabel}
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Badge variant={accidentSeverity === "none" ? "secondary" : "outline"}>
+          {accidentLabel}
+        </Badge>
+        <Badge variant={titleStatus === "clean" ? "secondary" : "outline"}>
+          {titleLabel}
+        </Badge>
+        {numberOfOwners != null && (
+          <Badge variant="secondary">
+            {numberOfOwners} owner{numberOfOwners === 1 ? "" : "s"}
           </Badge>
-          <span className="text-xs text-muted-foreground">
-            (seller-reported, not independently verified)
-          </span>
-        </div>
-        {accidentDetails && (
-          <p className="mt-2 text-sm text-muted-foreground">{accidentDetails}</p>
         )}
       </div>
+
+      {accidentDetails && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Accident details: </span>
+          {accidentDetails}
+        </p>
+      )}
+
+      {serviceHistory && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">Service history: </span>
+          {serviceHistory}
+        </p>
+      )}
 
       <div className="mt-4">
         <div className="text-xs font-medium text-muted-foreground">

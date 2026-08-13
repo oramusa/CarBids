@@ -62,6 +62,11 @@ export default async function EditListingPage(
                 dealerOnly: listing.dealer_only ?? false,
                 accidentSeverity: listing.accident_severity ?? "none",
                 accidentDetails: listing.accident_details ?? "",
+                titleStatus: listing.title_status ?? "clean",
+                numberOfOwners: listing.number_of_owners
+                  ? String(listing.number_of_owners)
+                  : "",
+                serviceHistory: listing.service_history ?? "",
               }}
             />
           ) : null}
