@@ -81,12 +81,14 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
     supabase
       .from("listings")
       .select(
-        `id, auction:auctions!inner (current_high_bid, status)`
+        `id, model, year, auction:auctions!inner (current_high_bid, end_time, status)`
       )
       .eq("make", listing.make)
       .in("auctions.status", ["ended", "sold"])
       .not("auctions.current_high_bid", "is", null)
-      .neq("id", id),
+      .neq("id", id)
+      .order("end_time", { referencedTable: "auctions", ascending: false })
+      .limit(10),
     session
       ? supabase
           .from("invoices")
@@ -99,12 +101,29 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
 
   const recalls = await getRecalls(listing.make, listing.model, listing.year);
 
-  const comps = ((comparableSales ?? []) as { auction: { current_high_bid: number | null } | { current_high_bid: number | null }[] | null }[])
+  type CompRow = {
+    model: string;
+    year: number;
+    auction:
+      | { current_high_bid: number | null; end_time: string }
+      | { current_high_bid: number | null; end_time: string }[]
+      | null;
+  };
+
+  const compSales = ((comparableSales ?? []) as CompRow[])
     .map((row) => {
       const a = Array.isArray(row.auction) ? row.auction[0] : row.auction;
-      return a?.current_high_bid ?? null;
+      if (a?.current_high_bid == null) return null;
+      return {
+        model: row.model,
+        year: row.year,
+        price: a.current_high_bid,
+        endTime: a.end_time,
+      };
     })
-    .filter((v): v is number => v != null);
+    .filter((v): v is { model: string; year: number; price: number; endTime: string } => v != null);
+
+  const comps = compSales.map((c) => c.price);
 
   const marketEstimate =
     comps.length > 0
@@ -193,6 +212,8 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
               high={marketEstimate.high}
               currentBid={auction.current_high_bid}
               sampleSize={comps.length}
+              comps={compSales}
+              make={listing.make}
             />
           </div>
         )}
