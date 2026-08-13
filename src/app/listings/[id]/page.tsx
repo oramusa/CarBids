@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
@@ -72,7 +73,16 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
           </h1>
           <p className="text-sm text-muted-foreground">
             {listing.mileage.toLocaleString()} miles · Listed by{" "}
-            {listing.seller?.username ?? "seller"}
+            {listing.seller?.username ? (
+              <Link
+                href={`/sellers/${listing.seller.username}`}
+                className="hover:underline"
+              >
+                {listing.seller.username}
+              </Link>
+            ) : (
+              "seller"
+            )}
           </p>
           <div className="mt-1">
             <SellerReputation

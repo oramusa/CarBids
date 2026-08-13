@@ -159,9 +159,18 @@ export default async function SellerDashboardPage(
             />
           </div>
         </div>
-        <Button asChild size="sm">
-          <Link href="/sell">List another car</Link>
-        </Button>
+        <div className="flex gap-2">
+          {session.profile?.username && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/sellers/${session.profile.username}`}>
+                View public profile
+              </Link>
+            </Button>
+          )}
+          <Button asChild size="sm">
+            <Link href="/sell">List another car</Link>
+          </Button>
+        </div>
       </div>
 
       <div className="mt-8 flex gap-2 border-b border-border">
