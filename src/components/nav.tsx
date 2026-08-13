@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { AuctionsNavDropdown } from "@/components/auctions-nav-dropdown";
 import { createClient } from "@/lib/supabase/server";
 
-const INERT_LINKS = ["About Us", "Leaderboard"];
+const INERT_LINKS = ["Leaderboard"];
 
 export async function Nav() {
   const session = await getCurrentUser();
@@ -48,6 +48,12 @@ export async function Nav() {
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             Events
+          </Link>
+          <Link
+            href="/about"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            About Us
           </Link>
           {INERT_LINKS.map((label) => (
             <span key={label} className="cursor-default text-sm text-muted-foreground">

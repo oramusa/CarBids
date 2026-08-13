@@ -186,6 +186,11 @@ export async function Footer() {
                     Events
                   </Link>
                 </li>
+                <li>
+                  <Link href="/about" className="hover:text-foreground">
+                    About Us
+                  </Link>
+                </li>
               </ul>
             </div>
 
