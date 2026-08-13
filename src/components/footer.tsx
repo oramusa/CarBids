@@ -50,7 +50,6 @@ async function getFeaturedReview() {
   const { data } = await supabase
     .from("reviews")
     .select("rating, comment, buyer:profiles!reviews_buyer_id_fkey (username)")
-    .not("comment", "is", null)
     .order("rating", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(1)
@@ -132,9 +131,11 @@ export async function Footer() {
                     {review.username ?? "buyer"}
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  &ldquo;{review.comment}&rdquo;
-                </p>
+                {review.comment && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    &ldquo;{review.comment}&rdquo;
+                  </p>
+                )}
               </div>
             )}
           </div>
