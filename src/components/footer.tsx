@@ -77,13 +77,15 @@ export async function Footer() {
 
       {(stats.completedCount > 0 || review) && (
         <div className="border-t border-border">
-          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-4 py-8 sm:grid-cols-2">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 sm:grid-cols-2">
             {stats.completedCount > 0 && (
               <div>
-                <h2 className="text-sm font-semibold">Why Car Bids?</h2>
-                <dl className="mt-3 grid grid-cols-2 gap-4">
+                <h2 className="text-base font-bold tracking-tight">
+                  Why Car Bids?
+                </h2>
+                <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5">
                   <div>
-                    <dt className="text-xl font-bold tracking-tight">
+                    <dt className="text-2xl font-bold tracking-tight">
                       {stats.completedCount}
                     </dt>
                     <dd className="text-xs text-muted-foreground">
@@ -92,7 +94,7 @@ export async function Footer() {
                   </div>
                   {stats.sellThroughRate != null && (
                     <div>
-                      <dt className="text-xl font-bold tracking-tight">
+                      <dt className="text-2xl font-bold tracking-tight">
                         {stats.sellThroughRate}%
                       </dt>
                       <dd className="text-xs text-muted-foreground">
@@ -101,7 +103,7 @@ export async function Footer() {
                     </div>
                   )}
                   <div>
-                    <dt className="text-xl font-bold tracking-tight">
+                    <dt className="text-2xl font-bold tracking-tight">
                       {formatCurrency(stats.valueSold)}
                     </dt>
                     <dd className="text-xs text-muted-foreground">
@@ -109,7 +111,7 @@ export async function Footer() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xl font-bold tracking-tight">
+                    <dt className="text-2xl font-bold tracking-tight">
                       {stats.memberCount}
                     </dt>
                     <dd className="text-xs text-muted-foreground">
@@ -122,17 +124,19 @@ export async function Footer() {
 
             {review && (
               <div>
-                <h2 className="text-sm font-semibold">A recent review</h2>
-                <div className="mt-3 flex items-center gap-2 text-sm">
-                  <span className="text-primary">
+                <h2 className="text-base font-bold tracking-tight">
+                  Our buyers love us!
+                </h2>
+                <div className="mt-4 flex items-center gap-2 text-sm">
+                  <span className="tracking-tight text-primary">
                     {"★".repeat(review.rating)}
                   </span>
-                  <span className="font-medium">
+                  <span className="font-semibold">
                     {review.username ?? "buyer"}
                   </span>
                 </div>
                 {review.comment && (
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                     &ldquo;{review.comment}&rdquo;
                   </p>
                 )}
@@ -153,7 +157,9 @@ export async function Footer() {
 
           <div className="flex gap-12">
             <div>
-              <div className="text-sm font-semibold">Explore</div>
+              <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Explore
+              </div>
               <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/" className="hover:text-foreground">
@@ -174,7 +180,9 @@ export async function Footer() {
             </div>
 
             <div>
-              <div className="text-sm font-semibold">Sellers</div>
+              <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Sellers
+              </div>
               <ul className="mt-3 flex flex-col gap-2 text-sm text-muted-foreground">
                 <li>
                   <Link href="/sell" className="hover:text-foreground">
