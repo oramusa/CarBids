@@ -24,6 +24,9 @@ export default async function AdminQueuePage() {
         <h1 className="text-2xl font-bold tracking-tight">Listing approval queue</h1>
         <div className="flex gap-2">
           <Button asChild variant="outline" size="sm">
+            <Link href="/admin/reports">Reports</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
             <Link href="/admin/auctions">Auctions</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
