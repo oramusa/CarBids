@@ -6,6 +6,12 @@ type ListingsFilter = {
   featuredOnly?: boolean;
   /** Free-text search against make/model. */
   q?: string;
+  yearMin?: number;
+  yearMax?: number;
+  priceMin?: number;
+  priceMax?: number;
+  transmission?: string;
+  bodyStyle?: string;
 };
 
 const LIVE_STATUSES = ["live"];
@@ -17,12 +23,22 @@ const PAST_STATUSES = ["ended", "sold", "no_sale"];
  */
 export function buildListingsQuery(
   supabase: SupabaseClient,
-  { view, featuredOnly, q }: ListingsFilter
+  {
+    view,
+    featuredOnly,
+    q,
+    yearMin,
+    yearMax,
+    priceMin,
+    priceMax,
+    transmission,
+    bodyStyle,
+  }: ListingsFilter
 ) {
   let query = supabase
     .from("listings")
     .select(
-      `id, make, model, year, photos, location, dealer_only,
+      `id, make, model, year, photos, location, dealer_only, transmission, body_style,
        auction:auctions!inner (id, end_time, current_high_bid, reserve_price, reserve_met, status)`
     )
     .in("auctions.status", view === "live" ? LIVE_STATUSES : PAST_STATUSES)
@@ -39,6 +55,15 @@ export function buildListingsQuery(
     const term = `%${q.trim()}%`;
     query = query.or(`make.ilike.${term},model.ilike.${term}`);
   }
+
+  if (yearMin != null) query = query.gte("year", yearMin);
+  if (yearMax != null) query = query.lte("year", yearMax);
+  if (priceMin != null)
+    query = query.gte("auctions.current_high_bid", priceMin);
+  if (priceMax != null)
+    query = query.lte("auctions.current_high_bid", priceMax);
+  if (transmission) query = query.eq("transmission", transmission);
+  if (bodyStyle) query = query.eq("body_style", bodyStyle);
 
   return query;
 }

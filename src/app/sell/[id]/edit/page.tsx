@@ -67,6 +67,8 @@ export default async function EditListingPage(
                   ? String(listing.number_of_owners)
                   : "",
                 serviceHistory: listing.service_history ?? "",
+                transmission: listing.transmission ?? undefined,
+                bodyStyle: listing.body_style ?? undefined,
               }}
             />
           ) : null}
