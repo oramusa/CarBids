@@ -62,38 +62,43 @@ export function PhotoReorderForm({
   async function addPhotos(files: FileList) {
     setUploading(true);
     setError(null);
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    if (!user) {
-      setError("You need to sign in to upload photos.");
-      setUploading(false);
-      return;
-    }
-
-    const uploadedUrls: string[] = [];
-    for (const file of Array.from(files)) {
-      const path = buildPhotoPath(user.id, file.name);
-      const { error: uploadError } = await supabase.storage
-        .from("listing-photos")
-        .upload(path, file);
-      if (uploadError) {
-        setError(`Photo upload failed: ${uploadError.message}`);
-        setUploading(false);
+      if (!user) {
+        setError("You need to sign in to upload photos.");
         return;
       }
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("listing-photos").getPublicUrl(path);
-      uploadedUrls.push(publicUrl);
-    }
 
-    setUploading(false);
-    const next = [...photos, ...uploadedUrls];
-    setPhotos(next);
-    save(next);
+      const uploadedUrls: string[] = [];
+      for (const file of Array.from(files)) {
+        const path = buildPhotoPath(user.id, file.name);
+        const { error: uploadError } = await supabase.storage
+          .from("listing-photos")
+          .upload(path, file);
+        if (uploadError) {
+          setError(`Photo upload failed: ${uploadError.message}`);
+          return;
+        }
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("listing-photos").getPublicUrl(path);
+        uploadedUrls.push(publicUrl);
+      }
+
+      const next = [...photos, ...uploadedUrls];
+      setPhotos(next);
+      save(next);
+    } catch (err) {
+      setError(
+        `Photo upload failed: ${err instanceof Error ? err.message : String(err)}`
+      );
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
