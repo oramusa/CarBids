@@ -38,6 +38,7 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
     { data: ownWatch },
     { data: similarListings },
     { data: comparableSales },
+    { data: invoice },
   ] = await Promise.all([
     supabase
       .from("bids")
@@ -84,6 +85,14 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
       .in("auctions.status", ["ended", "sold"])
       .not("auctions.current_high_bid", "is", null)
       .neq("id", id),
+    session
+      ? supabase
+          .from("invoices")
+          .select("winning_bid, buyer_premium, total_due, status")
+          .eq("auction_id", auction.id)
+          .eq("buyer_id", session.user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
 
   const comps = ((comparableSales ?? []) as { auction: { current_high_bid: number | null } | { current_high_bid: number | null }[] | null }[])
@@ -179,6 +188,7 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
           auction={auction}
           isSignedIn={!!session}
           initialIsWatching={!!ownWatch}
+          invoice={invoice}
           initialBids={
             bids?.map((b) => ({
               ...b,

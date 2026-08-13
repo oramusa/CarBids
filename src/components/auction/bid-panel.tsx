@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Countdown } from "@/components/auction/countdown";
 import { PulseDot } from "@/components/ui/pulse-dot";
 import { WatchButton } from "@/components/auction/watch-button";
-import { formatCurrency, getMinNextBid } from "@/lib/format";
+import { formatCurrency, getMinNextBid, getBuyerPremium } from "@/lib/format";
 
 type Bid = {
   id: string;
@@ -29,16 +29,25 @@ type AuctionState = {
   status: string;
 };
 
+type Invoice = {
+  winning_bid: number;
+  buyer_premium: number;
+  total_due: number;
+  status: string;
+};
+
 export function BidPanel({
   auction: initialAuction,
   initialBids,
   isSignedIn,
   initialIsWatching,
+  invoice,
 }: {
   auction: AuctionState;
   initialBids: Bid[];
   isSignedIn: boolean;
   initialIsWatching: boolean;
+  invoice?: Invoice | null;
 }) {
   const [auction, setAuction] = useState(initialAuction);
   const [bids, setBids] = useState(initialBids);
@@ -145,6 +154,32 @@ export function BidPanel({
         </Badge>
       )}
 
+      {invoice && (
+        <div className="rounded-lg border border-border bg-card p-4 text-sm">
+          <p className="font-medium">You won this auction</p>
+          <div className="mt-2 flex flex-col gap-1 text-muted-foreground">
+            <div className="flex justify-between">
+              <span>Winning bid</span>
+              <span>{formatCurrency(invoice.winning_bid)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Buyer&apos;s premium (4.5%, max $500)</span>
+              <span>{formatCurrency(invoice.buyer_premium)}</span>
+            </div>
+            <div className="flex justify-between font-medium text-foreground">
+              <span>Total due</span>
+              <span>{formatCurrency(invoice.total_due)}</span>
+            </div>
+          </div>
+          <Badge
+            variant={invoice.status === "paid" ? "default" : "outline"}
+            className="mt-3"
+          >
+            {invoice.status === "paid" ? "Paid" : "Unpaid"}
+          </Badge>
+        </div>
+      )}
+
       {!isEnded && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-2">
           {isSignedIn ? (
@@ -164,6 +199,11 @@ export function BidPanel({
               </div>
               <p className="text-xs text-muted-foreground">
                 Minimum next bid: {formatCurrency(minNextBid)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Winning bidders pay a 4.5% buyer&apos;s premium (max $500) —
+                estimated {formatCurrency(getBuyerPremium(minNextBid))} on the
+                current minimum.
               </p>
               {errorMessage && (
                 <p className="text-sm text-destructive">{errorMessage}</p>

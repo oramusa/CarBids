@@ -25,6 +25,14 @@ export function getMinNextBid(currentPrice: number | null | undefined) {
   return currentPrice + getMinIncrement(currentPrice);
 }
 
+// Mirrors compute_buyer_premium() in supabase/migrations/0010_add_buyer_premium_invoices.sql.
+// Client-side estimate only — the database function (fired by the
+// on_auction_ended trigger) is the source of truth for the actual invoice.
+export function getBuyerPremium(winningBid: number | null | undefined) {
+  if (winningBid == null) return 0;
+  return Math.round(Math.min(winningBid * 0.045, 500) * 100) / 100;
+}
+
 export function getUrgencyLevel(
   endTime: string,
   now: number = Date.now()

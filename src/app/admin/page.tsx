@@ -30,6 +30,9 @@ export default async function AdminQueuePage() {
             <Link href="/admin/auctions">Auctions</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
+            <Link href="/admin/invoices">Invoices</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
             <Link href="/admin/users">Users</Link>
           </Button>
         </div>
