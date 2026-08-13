@@ -86,6 +86,41 @@ export default async function SellerDashboardPage(
 
   const shown = grouped[activeTab];
 
+  // Bid/bidder/watcher counts for the auctions on the currently-shown tab.
+  // Aggregated client-side from raw rows rather than a DB view, since a
+  // seller's own auction volume is small and this keeps the schema untouched.
+  const auctionIds = shown
+    .map((listing) => normalizeAuction(listing)?.id)
+    .filter((id): id is string => !!id);
+
+  const stats = new Map<
+    string,
+    { bidCount: number; bidderCount: number; watcherCount: number }
+  >();
+
+  if (auctionIds.length > 0) {
+    const [{ data: bids }, { data: watches }] = await Promise.all([
+      supabase
+        .from("bids")
+        .select("auction_id, bidder_id")
+        .in("auction_id", auctionIds),
+      supabase
+        .from("watches")
+        .select("auction_id")
+        .in("auction_id", auctionIds),
+    ]);
+
+    for (const id of auctionIds) {
+      const auctionBids = bids?.filter((b) => b.auction_id === id) ?? [];
+      stats.set(id, {
+        bidCount: auctionBids.length,
+        bidderCount: new Set(auctionBids.map((b) => b.bidder_id)).size,
+        watcherCount:
+          watches?.filter((w) => w.auction_id === id).length ?? 0,
+      });
+    }
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div className="flex items-center justify-between">
@@ -146,6 +181,7 @@ export default async function SellerDashboardPage(
       <ul className="mt-6 flex flex-col gap-3">
         {shown.map((listing) => {
           const auction = normalizeAuction(listing);
+          const auctionStats = auction ? stats.get(auction.id) : undefined;
           return (
             <li
               key={listing.id}
@@ -166,6 +202,24 @@ export default async function SellerDashboardPage(
                     <span>{formatCurrency(auction.current_high_bid)}</span>
                   )}
                 </div>
+                {auctionStats && (
+                  <div className="mt-1.5 flex items-center gap-3 text-xs text-muted-foreground">
+                    <span>
+                      {auctionStats.bidCount}{" "}
+                      {auctionStats.bidCount === 1 ? "bid" : "bids"}
+                    </span>
+                    <span>
+                      {auctionStats.bidderCount}{" "}
+                      {auctionStats.bidderCount === 1 ? "bidder" : "bidders"}
+                    </span>
+                    <span>
+                      {auctionStats.watcherCount}{" "}
+                      {auctionStats.watcherCount === 1
+                        ? "watcher"
+                        : "watchers"}
+                    </span>
+                  </div>
+                )}
                 {listing.status === "rejected" && listing.rejection_reason && (
                   <p className="mt-1 text-xs text-destructive">
                     {listing.rejection_reason}
