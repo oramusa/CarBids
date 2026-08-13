@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import type { Recall } from "@/lib/nhtsa-recalls";
 
@@ -29,6 +32,9 @@ export function VehicleHistory({
     lemon: "Lemon title",
     other: "Other title status",
   }[titleStatus] ?? "Clean title";
+
+  const [showAllRecalls, setShowAllRecalls] = useState(false);
+  const visibleRecalls = showAllRecalls ? recalls : recalls.slice(0, 5);
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -76,22 +82,29 @@ export function VehicleHistory({
             No open recalls found for this make/model/year.
           </p>
         ) : (
-          <ul className="mt-2 flex flex-col gap-2">
-            {recalls.slice(0, 5).map((recall) => (
-              <li key={recall.campaignNumber} className="text-sm">
-                <span className="font-medium">{recall.component}</span>
-                <p className="text-xs text-muted-foreground">
-                  {recall.summary.slice(0, 160)}
-                  {recall.summary.length > 160 ? "…" : ""}
-                </p>
-              </li>
-            ))}
+          <>
+            <ul className="mt-2 flex flex-col gap-2">
+              {visibleRecalls.map((recall) => (
+                <li key={recall.campaignNumber} className="text-sm">
+                  <span className="font-medium">{recall.component}</span>
+                  <p className="text-xs text-muted-foreground">
+                    {recall.summary}
+                  </p>
+                </li>
+              ))}
+            </ul>
             {recalls.length > 5 && (
-              <li className="text-xs text-muted-foreground">
-                +{recalls.length - 5} more recall(s) on file.
-              </li>
+              <button
+                type="button"
+                onClick={() => setShowAllRecalls((v) => !v)}
+                className="mt-2 text-xs font-medium text-primary hover:underline"
+              >
+                {showAllRecalls
+                  ? "Show fewer recalls"
+                  : `Show ${recalls.length - 5} more recall(s)`}
+              </button>
             )}
-          </ul>
+          </>
         )}
       </div>
     </div>
