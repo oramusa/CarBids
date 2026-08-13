@@ -255,29 +255,32 @@ export default async function SellerDashboardPage(
                   </p>
                 )}
               </div>
-              {(listing.status === "pending_review" ||
-                listing.status === "draft") && (
-                <div className="flex gap-2">
+              <div className="flex gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/sell/${listing.id}/photos`}>Photos</Link>
+                </Button>
+                {(listing.status === "pending_review" ||
+                  listing.status === "draft") && (
                   <Button asChild variant="outline" size="sm">
                     <Link href={`/sell/${listing.id}/edit`}>Edit</Link>
                   </Button>
-                  {listing.status === "draft" && (
-                    <form action={submitDraftForReview.bind(null, listing.id)}>
-                      <Button size="sm" type="submit">
-                        Submit for review
-                      </Button>
-                    </form>
-                  )}
-                </div>
-              )}
-              {auction &&
-                ["ended", "no_sale"].includes(auction.status) && (
-                  <form action={relistListing.bind(null, listing.id)}>
-                    <Button variant="outline" size="sm" type="submit">
-                      Relist
+                )}
+                {listing.status === "draft" && (
+                  <form action={submitDraftForReview.bind(null, listing.id)}>
+                    <Button size="sm" type="submit">
+                      Submit for review
                     </Button>
                   </form>
                 )}
+                {auction &&
+                  ["ended", "no_sale"].includes(auction.status) && (
+                    <form action={relistListing.bind(null, listing.id)}>
+                      <Button variant="outline" size="sm" type="submit">
+                        Relist
+                      </Button>
+                    </form>
+                  )}
+              </div>
             </li>
           );
         })}
