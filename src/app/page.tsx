@@ -1,14 +1,18 @@
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/get-user";
 import { ListingCard, type ListingCardData } from "@/components/listing-card";
 import { Hero } from "@/components/hero";
 import { FilterBar } from "@/components/filter-bar";
 import { buildListingsQuery } from "@/lib/listings";
+import { saveSearch } from "@/app/dashboard/actions";
+import { Button } from "@/components/ui/button";
 
 export default async function HomePage({
   searchParams,
 }: PageProps<"/">) {
   const { q } = await searchParams;
   const supabase = await createClient();
+  const session = await getCurrentUser();
 
   const { data: listings, error } = await buildListingsQuery(supabase, {
     view: "live",
@@ -19,6 +23,14 @@ export default async function HomePage({
     <div className="mx-auto max-w-6xl px-4 py-10">
       <Hero />
       <FilterBar />
+
+      {typeof q === "string" && q && session && (
+        <form action={saveSearch.bind(null, q)} className="mt-4">
+          <Button type="submit" variant="outline" size="sm">
+            Save this search
+          </Button>
+        </form>
+      )}
 
       {error && (
         <p className="mt-8 text-sm text-destructive">

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/supabase/get-user";
 import { ListingCard, type ListingCardData } from "@/components/listing-card";
 import { cn } from "@/lib/utils";
+import { deleteSavedSearch } from "@/app/dashboard/actions";
+import { Button } from "@/components/ui/button";
 
 type AuctionRow = {
   id: string;
@@ -67,7 +69,7 @@ export default async function BuyerDashboardPage(
   const auctionColumns =
     "id, end_time, current_high_bid, reserve_price, reserve_met, status, current_high_bidder_id, listing:listings (id, make, model, year, photos, location)";
 
-  const [{ data: myBids }, { data: watchRows }, { data: endingSoon }] =
+  const [{ data: myBids }, { data: watchRows }, { data: endingSoon }, { data: savedSearches }] =
     await Promise.all([
       supabase.from("bids").select("auction_id").eq("bidder_id", userId),
       supabase
@@ -80,6 +82,11 @@ export default async function BuyerDashboardPage(
         .eq("status", "live")
         .order("end_time", { ascending: true })
         .limit(3),
+      supabase
+        .from("saved_searches")
+        .select("id, query, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false }),
     ]);
 
   const biddedAuctionIds = [...new Set(myBids?.map((b) => b.auction_id) ?? [])];
@@ -169,6 +176,29 @@ export default async function BuyerDashboardPage(
           <ListingCard key={c.id} listing={c} />
         ))}
       </div>
+
+      {savedSearches && savedSearches.length > 0 && (
+        <div className="mt-10">
+          <h2 className="mb-3 text-sm font-medium">Saved searches</h2>
+          <ul className="flex flex-col gap-2">
+            {savedSearches.map((s) => (
+              <li
+                key={s.id}
+                className="flex items-center justify-between rounded-lg border border-border bg-card px-4 py-2.5"
+              >
+                <Link href={`/?q=${encodeURIComponent(s.query)}`} className="text-sm hover:underline">
+                  {s.query}
+                </Link>
+                <form action={deleteSavedSearch.bind(null, s.id)}>
+                  <Button variant="ghost" size="sm" type="submit">
+                    Remove
+                  </Button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
