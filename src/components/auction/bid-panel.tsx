@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Countdown } from "@/components/auction/countdown";
 import { PulseDot } from "@/components/ui/pulse-dot";
+import { WatchButton } from "@/components/auction/watch-button";
 import { formatCurrency, getMinNextBid } from "@/lib/format";
 
 type Bid = {
@@ -32,10 +33,12 @@ export function BidPanel({
   auction: initialAuction,
   initialBids,
   isSignedIn,
+  initialIsWatching,
 }: {
   auction: AuctionState;
   initialBids: Bid[];
   isSignedIn: boolean;
+  initialIsWatching: boolean;
 }) {
   const [auction, setAuction] = useState(initialAuction);
   const [bids, setBids] = useState(initialBids);
@@ -129,6 +132,12 @@ export function BidPanel({
           {!isEnded && <Countdown endTime={auction.end_time} />}
         </div>
       </div>
+
+      <WatchButton
+        auctionId={auction.id}
+        isSignedIn={isSignedIn}
+        initialIsWatching={initialIsWatching}
+      />
 
       {auction.reserve_price != null && (
         <Badge variant={auction.reserve_met ? "default" : "outline"} className="w-fit">

@@ -58,6 +58,12 @@ export async function Nav() {
           {session ? (
             <div className="flex items-center gap-3">
               <Link
+                href="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                My Bids
+              </Link>
+              <Link
                 href="/notifications"
                 className="relative text-muted-foreground hover:text-foreground"
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}

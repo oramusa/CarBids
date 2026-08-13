@@ -7,6 +7,7 @@ import { CommentsSection } from "@/components/auction/comments-section";
 import { ListingGallery } from "@/components/auction/listing-gallery";
 import { SellerReputation } from "@/components/seller-reputation";
 import { ReviewForm } from "@/components/auction/review-form";
+import { ListingCard, type ListingCardData } from "@/components/listing-card";
 
 export default async function ListingPage(props: PageProps<"/listings/[id]">) {
   const { id } = await props.params;
@@ -28,27 +29,51 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
     ? listing.auction[0]
     : listing.auction;
 
-  const [{ data: bids }, { data: comments }, { data: sellerReviews }, { data: ownReview }] =
-    await Promise.all([
-      supabase
-        .from("bids")
-        .select("id, amount, bidder_id, created_at, bidder:profiles(username)")
-        .eq("auction_id", auction.id)
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("comments")
-        .select("id, body, created_at, user_id, author:profiles(username)")
-        .eq("listing_id", id)
-        .order("created_at", { ascending: true }),
-      supabase.from("reviews").select("rating").eq("seller_id", listing.seller_id),
-      session
-        ? supabase
-            .from("reviews")
-            .select("id")
-            .eq("auction_id", auction.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+  const [
+    { data: bids },
+    { data: comments },
+    { data: sellerReviews },
+    { data: ownReview },
+    { data: ownWatch },
+    { data: similarListings },
+  ] = await Promise.all([
+    supabase
+      .from("bids")
+      .select("id, amount, bidder_id, created_at, bidder:profiles(username)")
+      .eq("auction_id", auction.id)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("comments")
+      .select("id, body, created_at, user_id, author:profiles(username)")
+      .eq("listing_id", id)
+      .order("created_at", { ascending: true }),
+    supabase.from("reviews").select("rating").eq("seller_id", listing.seller_id),
+    session
+      ? supabase
+          .from("reviews")
+          .select("id")
+          .eq("auction_id", auction.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    session
+      ? supabase
+          .from("watches")
+          .select("user_id")
+          .eq("user_id", session.user.id)
+          .eq("auction_id", auction.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("listings")
+      .select(
+        `id, make, model, year, photos, location,
+         auction:auctions!inner (id, end_time, current_high_bid, reserve_price, reserve_met, status)`
+      )
+      .eq("make", listing.make)
+      .eq("auctions.status", "live")
+      .neq("id", id)
+      .limit(4),
+  ]);
 
   const reviewCount = sellerReviews?.length ?? 0;
   const averageRating =
@@ -119,6 +144,7 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
         <BidPanel
           auction={auction}
           isSignedIn={!!session}
+          initialIsWatching={!!ownWatch}
           initialBids={
             bids?.map((b) => ({
               ...b,
@@ -127,6 +153,19 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
             })) ?? []
           }
         />
+
+        {similarListings && similarListings.length > 0 && (
+          <div className="mt-10">
+            <h3 className="mb-3 text-sm font-medium">Similar vehicles</h3>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {(similarListings as unknown as (ListingCardData & { auction: ListingCardData["auction"] })[]).map(
+                (similar) => (
+                  <ListingCard key={similar.id} listing={similar} />
+                )
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
