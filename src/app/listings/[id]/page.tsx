@@ -8,6 +8,7 @@ import { ListingGallery } from "@/components/auction/listing-gallery";
 import { SellerReputation } from "@/components/seller-reputation";
 import { ReviewForm } from "@/components/auction/review-form";
 import { ListingCard, type ListingCardData } from "@/components/listing-card";
+import { MarketEstimate } from "@/components/market-estimate";
 
 export default async function ListingPage(props: PageProps<"/listings/[id]">) {
   const { id } = await props.params;
@@ -36,6 +37,7 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
     { data: ownReview },
     { data: ownWatch },
     { data: similarListings },
+    { data: comparableSales },
   ] = await Promise.all([
     supabase
       .from("bids")
@@ -73,7 +75,28 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
       .eq("auctions.status", "live")
       .neq("id", id)
       .limit(4),
+    supabase
+      .from("listings")
+      .select(
+        `id, auction:auctions!inner (current_high_bid, status)`
+      )
+      .eq("make", listing.make)
+      .in("auctions.status", ["ended", "sold"])
+      .not("auctions.current_high_bid", "is", null)
+      .neq("id", id),
   ]);
+
+  const comps = ((comparableSales ?? []) as { auction: { current_high_bid: number | null } | { current_high_bid: number | null }[] | null }[])
+    .map((row) => {
+      const a = Array.isArray(row.auction) ? row.auction[0] : row.auction;
+      return a?.current_high_bid ?? null;
+    })
+    .filter((v): v is number => v != null);
+
+  const marketEstimate =
+    comps.length > 0
+      ? { low: Math.min(...comps), high: Math.max(...comps) }
+      : null;
 
   const reviewCount = sellerReviews?.length ?? 0;
   const averageRating =
@@ -141,6 +164,17 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
       </div>
 
       <div>
+        {marketEstimate && (
+          <div className="mb-4">
+            <MarketEstimate
+              low={marketEstimate.low}
+              high={marketEstimate.high}
+              currentBid={auction.current_high_bid}
+              sampleSize={comps.length}
+            />
+          </div>
+        )}
+
         <BidPanel
           auction={auction}
           isSignedIn={!!session}

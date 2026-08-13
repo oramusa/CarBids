@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { decodeVin } from "@/app/sell/vin-actions";
 
 const schema = z.object({
   make: z.string().min(1, "Required"),
@@ -53,15 +54,49 @@ export function ListingForm(props: ListingFormProps) {
   const [targetStatus, setTargetStatus] = useState<
     "draft" | "pending_review"
   >("pending_review");
+  const [vinStatus, setVinStatus] = useState<
+    "idle" | "decoding" | "error"
+  >("idle");
+  const [vinError, setVinError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<FormInput, unknown, FormValues>({
     resolver: zodResolver(schema),
     defaultValues: props.mode === "edit" ? props.defaultValues : undefined,
   });
+
+  async function handleDecodeVin() {
+    const vin = getValues("vin");
+    if (!vin) {
+      setVinError("Enter a VIN first");
+      setVinStatus("error");
+      return;
+    }
+
+    setVinStatus("decoding");
+    setVinError(null);
+    const result = await decodeVin(vin);
+
+    if ("error" in result) {
+      setVinError(result.error);
+      setVinStatus("error");
+      return;
+    }
+
+    setValue("make", result.make, { shouldValidate: true });
+    setValue(
+      "model",
+      result.trim ? `${result.model} ${result.trim}` : result.model,
+      { shouldValidate: true }
+    );
+    if (result.year) setValue("year", result.year, { shouldValidate: true });
+    setVinStatus("idle");
+  }
 
   async function onSubmit(values: FormValues) {
     setSubmitting(true);
@@ -185,7 +220,21 @@ export function ListingForm(props: ListingFormProps) {
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="vin">VIN (optional)</Label>
-          <Input id="vin" {...register("vin")} />
+          <div className="flex gap-2">
+            <Input id="vin" {...register("vin")} />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDecodeVin}
+              disabled={vinStatus === "decoding"}
+            >
+              {vinStatus === "decoding" ? "Decoding…" : "Decode"}
+            </Button>
+          </div>
+          {vinStatus === "error" && vinError && (
+            <p className="text-xs text-destructive">{vinError}</p>
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor="condition">Condition (optional)</Label>
