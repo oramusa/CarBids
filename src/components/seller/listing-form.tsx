@@ -21,6 +21,8 @@ const schema = z.object({
   location: z.string().max(80).optional(),
   description: z.string().min(20, "Tell buyers a bit more (20+ characters)"),
   dealerOnly: z.boolean().optional(),
+  accidentSeverity: z.enum(["none", "minor", "major"]).optional(),
+  accidentDetails: z.string().optional(),
 });
 
 type FormInput = z.input<typeof schema>;
@@ -136,7 +138,7 @@ export function ListingForm(props: ListingFormProps) {
     }
 
     const status = canChooseDraft(props) ? targetStatus : "pending_review";
-    const { dealerOnly, ...rest } = values;
+    const { dealerOnly, accidentSeverity, accidentDetails, ...rest } = values;
 
     if (props.mode === "create") {
       const { data: listing, error } = await supabase
@@ -144,6 +146,8 @@ export function ListingForm(props: ListingFormProps) {
         .insert({
           ...rest,
           dealer_only: dealerOnly ?? false,
+          accident_severity: accidentSeverity ?? "none",
+          accident_details: accidentDetails || null,
           seller_id: user.id,
           photos: newPhotoUrls,
           status,
@@ -173,6 +177,8 @@ export function ListingForm(props: ListingFormProps) {
       .update({
         ...rest,
         dealer_only: dealerOnly ?? false,
+        accident_severity: accidentSeverity ?? "none",
+        accident_details: accidentDetails || null,
         photos: [...props.existingPhotos, ...newPhotoUrls],
         status,
       })
@@ -267,6 +273,28 @@ export function ListingForm(props: ListingFormProps) {
             {errors.description.message}
           </p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="accidentSeverity">Accident history</Label>
+        <select
+          id="accidentSeverity"
+          {...register("accidentSeverity")}
+          className="h-9 rounded-md border border-input bg-transparent px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          <option value="none">None</option>
+          <option value="minor">Minor accident(s)</option>
+          <option value="major">Major accident / frame damage</option>
+        </select>
+        <p className="text-xs text-muted-foreground">
+          Self-reported by you — not independently verified.
+        </p>
+        <textarea
+          {...register("accidentDetails")}
+          rows={2}
+          placeholder="Optional details (what happened, when, repairs made)"
+          className="rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
       </div>
 
       <label className="flex items-center gap-2 text-sm">

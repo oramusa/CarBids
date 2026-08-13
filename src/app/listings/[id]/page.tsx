@@ -9,6 +9,8 @@ import { SellerReputation } from "@/components/seller-reputation";
 import { ReviewForm } from "@/components/auction/review-form";
 import { ListingCard, type ListingCardData } from "@/components/listing-card";
 import { MarketEstimate } from "@/components/market-estimate";
+import { VehicleHistory } from "@/components/vehicle-history";
+import { getRecalls } from "@/lib/nhtsa-recalls";
 
 export default async function ListingPage(props: PageProps<"/listings/[id]">) {
   const { id } = await props.params;
@@ -95,6 +97,8 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
       : Promise.resolve({ data: null }),
   ]);
 
+  const recalls = await getRecalls(listing.make, listing.model, listing.year);
+
   const comps = ((comparableSales ?? []) as { auction: { current_high_bid: number | null } | { current_high_bid: number | null }[] | null }[])
     .map((row) => {
       const a = Array.isArray(row.auction) ? row.auction[0] : row.auction;
@@ -151,6 +155,12 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
         <p className="whitespace-pre-line text-sm leading-relaxed">
           {listing.description}
         </p>
+
+        <VehicleHistory
+          accidentSeverity={listing.accident_severity ?? "none"}
+          accidentDetails={listing.accident_details}
+          recalls={recalls}
+        />
 
         {canReview && (
           <ReviewForm

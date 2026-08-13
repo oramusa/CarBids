@@ -60,6 +60,8 @@ export default async function EditListingPage(
                 location: listing.location ?? "",
                 description: listing.description,
                 dealerOnly: listing.dealer_only ?? false,
+                accidentSeverity: listing.accident_severity ?? "none",
+                accidentDetails: listing.accident_details ?? "",
               }}
             />
           ) : null}
