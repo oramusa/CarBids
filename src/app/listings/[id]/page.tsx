@@ -144,6 +144,7 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
   const isAuctionOver = ["ended", "sold"].includes(auction.status);
   const isWinner = session?.user.id === auction.current_high_bidder_id;
   const canReview = isAuctionOver && isWinner && !ownReview;
+  const isOwner = session?.user.id === listing.seller_id;
 
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-4 py-10 lg:grid-cols-2">
@@ -153,9 +154,19 @@ export default async function ListingPage(props: PageProps<"/listings/[id]">) {
           alt={`${listing.year} ${listing.make} ${listing.model}`}
         />
         <div>
-          <h1 className="text-2xl font-semibold">
-            {listing.year} {listing.make} {listing.model}
-          </h1>
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl font-semibold">
+              {listing.year} {listing.make} {listing.model}
+            </h1>
+            {isOwner && (
+              <Link
+                href={`/sell/${listing.id}/photos`}
+                className="shrink-0 rounded-full border border-border px-3 py-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Manage photos
+              </Link>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {listing.mileage.toLocaleString()} miles · Listed by{" "}
             {listing.seller?.username ? (
