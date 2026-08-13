@@ -176,6 +176,11 @@ export async function Footer() {
                     Past Results
                   </Link>
                 </li>
+                <li>
+                  <Link href="/community" className="hover:text-foreground">
+                    Community
+                  </Link>
+                </li>
               </ul>
             </div>
 
