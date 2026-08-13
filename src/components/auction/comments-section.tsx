@@ -38,8 +38,21 @@ export function CommentsSection({
           table: "comments",
           filter: `listing_id=eq.${listingId}`,
         },
-        (payload) => {
-          setComments((prev) => [...prev, payload.new as Comment]);
+        async (payload) => {
+          // Realtime INSERT payloads only carry the raw row — no joined
+          // profile — so the poster's username has to be fetched
+          // separately, or every live-appended comment falls back to the
+          // generic "user" label.
+          const newComment = payload.new as Comment;
+          const { data: author } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", newComment.user_id)
+            .single();
+          setComments((prev) => [
+            ...prev,
+            { ...newComment, username: author?.username },
+          ]);
         }
       )
       .subscribe();
