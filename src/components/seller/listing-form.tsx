@@ -20,6 +20,7 @@ const schema = z.object({
   condition: z.string().optional(),
   location: z.string().max(80).optional(),
   description: z.string().min(20, "Tell buyers a bit more (20+ characters)"),
+  dealerOnly: z.boolean().optional(),
 });
 
 type FormInput = z.input<typeof schema>;
@@ -135,12 +136,14 @@ export function ListingForm(props: ListingFormProps) {
     }
 
     const status = canChooseDraft(props) ? targetStatus : "pending_review";
+    const { dealerOnly, ...rest } = values;
 
     if (props.mode === "create") {
       const { data: listing, error } = await supabase
         .from("listings")
         .insert({
-          ...values,
+          ...rest,
+          dealer_only: dealerOnly ?? false,
           seller_id: user.id,
           photos: newPhotoUrls,
           status,
@@ -168,7 +171,8 @@ export function ListingForm(props: ListingFormProps) {
     const { error } = await supabase
       .from("listings")
       .update({
-        ...values,
+        ...rest,
+        dealer_only: dealerOnly ?? false,
         photos: [...props.existingPhotos, ...newPhotoUrls],
         status,
       })
@@ -264,6 +268,11 @@ export function ListingForm(props: ListingFormProps) {
           </p>
         )}
       </div>
+
+      <label className="flex items-center gap-2 text-sm">
+        <input type="checkbox" {...register("dealerOnly")} className="size-4" />
+        Dealer-only auction (only visible to verified buyers)
+      </label>
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="photos">

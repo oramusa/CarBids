@@ -59,6 +59,7 @@ export default async function EditListingPage(
                 condition: listing.condition ?? "",
                 location: listing.location ?? "",
                 description: listing.description,
+                dealerOnly: listing.dealer_only ?? false,
               }}
             />
           ) : null}

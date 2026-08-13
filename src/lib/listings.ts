@@ -22,7 +22,7 @@ export function buildListingsQuery(
   let query = supabase
     .from("listings")
     .select(
-      `id, make, model, year, photos, location,
+      `id, make, model, year, photos, location, dealer_only,
        auction:auctions!inner (id, end_time, current_high_bid, reserve_price, reserve_met, status)`
     )
     .in("auctions.status", view === "live" ? LIVE_STATUSES : PAST_STATUSES)

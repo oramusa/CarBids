@@ -14,6 +14,7 @@ export type ListingCardData = {
   year: number;
   photos: string[];
   location: string | null;
+  dealer_only?: boolean;
   auction: {
     id: string;
     end_time: string;
@@ -55,9 +56,16 @@ export function ListingCard({ listing }: { listing: ListingCardData }) {
         </div>
         <div className={`h-[3px] w-full ${urgencyBarClass}`} />
         <CardContent className="pt-4">
-          <h3 className="font-semibold">
-            {listing.year} {listing.make} {listing.model}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className="font-semibold">
+              {listing.year} {listing.make} {listing.model}
+            </h3>
+            {listing.dealer_only && (
+              <Badge variant="outline" className="text-[10px]">
+                Dealer only
+              </Badge>
+            )}
+          </div>
           {listing.location && (
             <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground min-w-0">
               <MapPin className="size-3" />
