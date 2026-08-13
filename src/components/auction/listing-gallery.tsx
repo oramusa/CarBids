@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { CarIllustration } from "@/components/car-illustration";
 import { cn } from "@/lib/utils";
@@ -13,39 +13,41 @@ export function ListingGallery({
   alt: string;
 }) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  function goTo(index: number) {
+    setActiveIndex(index);
+    const slide = trackRef.current?.children[index];
+    slide?.scrollIntoView({
+      behavior: "smooth",
+      inline: "start",
+      block: "nearest",
+    });
+  }
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
+      <div
+        ref={trackRef}
+        className="flex aspect-[4/3] w-full snap-x snap-mandatory overflow-x-auto rounded-lg bg-muted [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
         {photos.length > 0 ? (
-          <div
-            className="flex h-full transition-transform duration-300 ease-out"
-            style={{
-              width: `${photos.length * 100}%`,
-              // translateX's percentage is relative to this track's own
-              // width (N slides wide), not one slide — dividing by N
-              // converts "move activeIndex slides" into the right %.
-              transform: `translateX(-${(activeIndex / photos.length) * 100}%)`,
-            }}
-          >
-            {photos.map((photo, index) => (
-              <div
-                key={photo}
-                className="relative h-full shrink-0"
-                style={{ width: `${100 / photos.length}%` }}
-              >
-                <Image
-                  src={photo}
-                  alt={alt}
-                  fill
-                  className="object-cover"
-                  priority={index === 0}
-                />
-              </div>
-            ))}
-          </div>
+          photos.map((photo, index) => (
+            <div
+              key={photo}
+              className="relative h-full w-full shrink-0 snap-start"
+            >
+              <Image
+                src={photo}
+                alt={alt}
+                fill
+                className="object-cover"
+                priority={index === 0}
+              />
+            </div>
+          ))
         ) : (
-          <CarIllustration className="h-full w-full" />
+          <CarIllustration className="h-full w-full shrink-0" />
         )}
       </div>
 
@@ -55,7 +57,7 @@ export function ListingGallery({
             <button
               key={photo}
               type="button"
-              onClick={() => setActiveIndex(index)}
+              onClick={() => goTo(index)}
               aria-label={`View photo ${index + 1} of ${photos.length}`}
               aria-current={index === activeIndex}
               className={cn(
