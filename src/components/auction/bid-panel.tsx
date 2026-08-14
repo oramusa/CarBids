@@ -82,8 +82,21 @@ export function BidPanel({
           table: "bids",
           filter: `auction_id=eq.${auction.id}`,
         },
-        (payload) => {
-          setBids((prev) => [payload.new as Bid, ...prev]);
+        async (payload) => {
+          // Realtime INSERT payloads only carry the raw row — no joined
+          // profile — so the bidder's username has to be fetched
+          // separately, or every live-appended bid falls back to the
+          // generic "bidder" label.
+          const newBid = payload.new as Bid;
+          const { data: bidder } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", newBid.bidder_id)
+            .single();
+          setBids((prev) => [
+            { ...newBid, bidder_username: bidder?.username },
+            ...prev,
+          ]);
         }
       )
       .subscribe();
@@ -128,7 +141,12 @@ export function BidPanel({
     <div className="flex flex-col gap-6">
       <div className="flex items-baseline justify-between">
         <div>
-          <div className="text-sm text-muted-foreground">Current bid</div>
+          <div className="text-sm text-muted-foreground">
+            Current bid
+            {bids.length > 0 && (
+              <> · {bids.length} {bids.length === 1 ? "bid" : "bids"}</>
+            )}
+          </div>
           <div className="text-3xl font-semibold">
             {formatCurrency(auction.current_high_bid)}
           </div>
@@ -223,7 +241,9 @@ export function BidPanel({
       <Separator />
 
       <div>
-        <h3 className="mb-2 text-sm font-medium">Bid history</h3>
+        <h3 className="mb-2 text-sm font-medium">
+          Bid history{bids.length > 0 && ` (${bids.length})`}
+        </h3>
         {bids.length === 0 ? (
           <p className="text-sm text-muted-foreground">No bids yet.</p>
         ) : (
